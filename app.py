@@ -1,128 +1,128 @@
-# # #==================================================
-# # # From Grok-Gemini
-# # #==================================================
-# import streamlit as st
-# import openmeteo_requests
-# import pandas as pd
-# import requests_cache
-# from retry_requests import retry
-# import os
-# from datetime import datetime
+# #==================================================
+# # From Grok-Gemini
+# #==================================================
+import streamlit as st
+import openmeteo_requests
+import pandas as pd
+import requests_cache
+from retry_requests import retry
+import os
+from datetime import datetime
 
-# # Set page configuration
-# st.set_page_config(page_title="MLOps Weather Forecasting App", page_icon="🌤️", layout="wide")
+# Set page configuration
+st.set_page_config(page_title="MLOps Weather Forecasting App", page_icon="🌤️", layout="wide")
 
-# st.title("🌤️ Real-Time Weather Forecasting Dashboard")
-# st.markdown("This application fetches live weather forecasts using the Open-Meteo API, displays the metrics, and stores data locally.")
+st.title("🌤️ Real-Time Weather Forecasting Dashboard")
+st.markdown("This application fetches live weather forecasts using the Open-Meteo API, displays the metrics, and stores data locally.")
 
-# # ====================== SETUP OPEN-METEO CLIENT ======================
-# @st.cache_resource
-# def get_api_client():
-#     cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
-#     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
-#     return openmeteo_requests.Client(session=retry_session)
+# ====================== SETUP OPEN-METEO CLIENT ======================
+@st.cache_resource
+def get_api_client():
+    cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+    retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+    return openmeteo_requests.Client(session=retry_session)
 
-# openmeteo = get_api_client()
+openmeteo = get_api_client()
 
-# # ====================== DATA FETCHING LOGIC ======================
-# def fetch_weather_data():
-#     url = "https://api.open-meteo.com/v1/forecast"
-#     params = {
-#         "latitude": 8.5241,
-#         "longitude": 76.9366,
-#         "hourly": ["temperature_2m", "relative_humidity_2m", "dew_point_2m", 
-#                    "rain", "wind_speed_10m", "wind_direction_10m"],
-#     }
+# ====================== DATA FETCHING LOGIC ======================
+def fetch_weather_data():
+    url = "https://api.open-meteo.com/v1/forecast"
+    params = {
+        "latitude": 8.5241,
+        "longitude": 76.9366,
+        "hourly": ["temperature_2m", "relative_humidity_2m", "dew_point_2m", 
+                   "rain", "wind_speed_10m", "wind_direction_10m"],
+    }
     
-#     responses = openmeteo.weather_api(url, params=params)
-#     response = responses[0]
+    responses = openmeteo.weather_api(url, params=params)
+    response = responses[0]
     
-#     # Process hourly data
-#     hourly = response.Hourly()
+    # Process hourly data
+    hourly = response.Hourly()
     
-#     hourly_data = {
-#         "date": pd.date_range(
-#             start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-#             end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-#             freq=pd.Timedelta(seconds=hourly.Interval()),
-#             inclusive="left"
-#         )
-#     }
+    hourly_data = {
+        "date": pd.date_range(
+            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=hourly.Interval()),
+            inclusive="left"
+        )
+    }
     
-#     hourly_data["temperature_2m"] = hourly.Variables(0).ValuesAsNumpy()
-#     hourly_data["relative_humidity_2m"] = hourly.Variables(1).ValuesAsNumpy()
-#     hourly_data["dew_point_2m"] = hourly.Variables(2).ValuesAsNumpy()
-#     hourly_data["rain"] = hourly.Variables(3).ValuesAsNumpy()
-#     hourly_data["wind_speed_10m"] = hourly.Variables(4).ValuesAsNumpy()
-#     hourly_data["wind_direction_10m"] = hourly.Variables(5).ValuesAsNumpy()
+    hourly_data["temperature_2m"] = hourly.Variables(0).ValuesAsNumpy()
+    hourly_data["relative_humidity_2m"] = hourly.Variables(1).ValuesAsNumpy()
+    hourly_data["dew_point_2m"] = hourly.Variables(2).ValuesAsNumpy()
+    hourly_data["rain"] = hourly.Variables(3).ValuesAsNumpy()
+    hourly_data["wind_speed_10m"] = hourly.Variables(4).ValuesAsNumpy()
+    hourly_data["wind_direction_10m"] = hourly.Variables(5).ValuesAsNumpy()
     
-#     df = pd.DataFrame(data=hourly_data)
+    df = pd.DataFrame(data=hourly_data)
     
-#     # Format date for better readability in the UI
-#     df["date"] = pd.to_datetime(df["date"]).dt.tz_convert(None)
+    # Format date for better readability in the UI
+    df["date"] = pd.to_datetime(df["date"]).dt.tz_convert(None)
     
-#     metadata = {
-#         "lat": response.Latitude(),
-#         "lon": response.Longitude(),
-#         "elevation": response.Elevation()
-#     }
+    metadata = {
+        "lat": response.Latitude(),
+        "lon": response.Longitude(),
+        "elevation": response.Elevation()
+    }
     
-#     return df, metadata
+    return df, metadata
 
-# # ====================== RENDER DASHBOARD ======================
+# ====================== RENDER DASHBOARD ======================
 
-# # Fetch data
-# try:
-#     with st.spinner("Fetching data from Open-Meteo API..."):
-#         hourly_dataframe, meta = fetch_weather_data()
+# Fetch data
+try:
+    with st.spinner("Fetching data from Open-Meteo API..."):
+        hourly_dataframe, meta = fetch_weather_data()
     
-#     # 1. Sidebar Metadata & Actions
-#     st.sidebar.header("📍 Location Metadata")
-#     st.sidebar.write(f"**Coordinates:** {meta['lat']:.4f}°N, {meta['lon']:.4f}°E")
-#     st.sidebar.write(f"**Elevation:** {meta['elevation']} m asl")
+    # 1. Sidebar Metadata & Actions
+    st.sidebar.header("📍 Location Metadata")
+    st.sidebar.write(f"**Coordinates:** {meta['lat']:.4f}°N, {meta['lon']:.4f}°E")
+    st.sidebar.write(f"**Elevation:** {meta['elevation']} m asl")
     
-#     # Map visualizer in the sidebar
-#     map_data = pd.DataFrame({'lat': [meta['lat']], 'lon': [meta['lon']]})
-#     st.sidebar.map(map_data, zoom=10)
+    # Map visualizer in the sidebar
+    map_data = pd.DataFrame({'lat': [meta['lat']], 'lon': [meta['lon']]})
+    st.sidebar.map(map_data, zoom=10)
     
-#     # Save to local folder functionality
-#     if st.sidebar.button("💾 Trigger Local Ingestion Save"):
-#         data_folder = "data"
-#         os.makedirs(data_folder, exist_ok=True)
-#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#         csv_filename = f"weather_thiruvananthapuram_{timestamp}.csv"
-#         csv_path = os.path.join(data_folder, csv_filename)
+    # Save to local folder functionality
+    if st.sidebar.button("💾 Trigger Local Ingestion Save"):
+        data_folder = "data"
+        os.makedirs(data_folder, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_filename = f"weather_thiruvananthapuram_{timestamp}.csv"
+        csv_path = os.path.join(data_folder, csv_filename)
         
-#         hourly_dataframe.to_csv(csv_path, index=False)
-#         st.sidebar.success(f"Saved locally to: `{csv_path}`")
+        hourly_dataframe.to_csv(csv_path, index=False)
+        st.sidebar.success(f"Saved locally to: `{csv_path}`")
 
-#     # 2. Key Metrics Row (Using average or current data point)
-#     st.subheader("📊 Current Forecast Highlights (Averages)")
-#     col1, col2, col3, col4 = st.columns(4)
-#     col1.metric("Avg Temp (°C)", f"{hourly_dataframe['temperature_2m'].mean().round(1)}°C")
-#     col2.metric("Avg Humidity (%)", f"{hourly_dataframe['relative_humidity_2m'].mean().round(1)}%")
-#     col3.metric("Total Expected Rain (mm)", f"{hourly_dataframe['rain'].sum().round(1)} mm")
-#     col4.metric("Avg Wind Speed (km/h)", f"{hourly_dataframe['wind_speed_10m'].mean().round(1)} km/h")
+    # 2. Key Metrics Row (Using average or current data point)
+    st.subheader("📊 Current Forecast Highlights (Averages)")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Avg Temp (°C)", f"{hourly_dataframe['temperature_2m'].mean().round(1)}°C")
+    col2.metric("Avg Humidity (%)", f"{hourly_dataframe['relative_humidity_2m'].mean().round(1)}%")
+    col3.metric("Total Expected Rain (mm)", f"{hourly_dataframe['rain'].sum().round(1)} mm")
+    col4.metric("Avg Wind Speed (km/h)", f"{hourly_dataframe['wind_speed_10m'].mean().round(1)} km/h")
 
-#     # 3. Interactive Chart
-#     st.subheader("📈 Temperature Trend Over Time")
-#     st.line_chart(data=hourly_dataframe, x="date", y="temperature_2m", use_container_width=True)
+    # 3. Interactive Chart
+    st.subheader("📈 Temperature Trend Over Time")
+    st.line_chart(data=hourly_dataframe, x="date", y="temperature_2m", use_container_width=True)
 
-#     # 4. Data Preview & Download
-#     st.subheader("📋 Forecast Data Preview")
-#     st.dataframe(hourly_dataframe, use_container_width=True)
+    # 4. Data Preview & Download
+    st.subheader("📋 Forecast Data Preview")
+    st.dataframe(hourly_dataframe, use_container_width=True)
     
-#     # Browser CSV download option
-#     csv_bytes = hourly_dataframe.to_csv(index=False).encode('utf-8')
-#     st.download_button(
-#         label="📥 Download Dataset as CSV",
-#         data=csv_bytes,
-#         file_name=f"weather_data_{datetime.now().strftime('%Y%m%d')}.csv",
-#         mime="text/csv"
-#     )
+    # Browser CSV download option
+    csv_bytes = hourly_dataframe.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Download Dataset as CSV",
+        data=csv_bytes,
+        file_name=f"weather_data_{datetime.now().strftime('%Y%m%d')}.csv",
+        mime="text/csv"
+    )
 
-# except Exception as e:
-#     st.error(f"Failed to fetch data or render the app. Error: {e}")
+except Exception as e:
+    st.error(f"Failed to fetch data or render the app. Error: {e}")
 
 
 # # # #==================================================
@@ -672,123 +672,123 @@
 # )
 
 
-# # #==================================================
-# # # From Grok-chatgpt
-# # #==================================================
+# # # #==================================================
+# # # # From Grok-chatgpt
+# # # #==================================================
 
-import streamlit as st
-import openmeteo_requests
-import pandas as pd
-import requests_cache
-from retry_requests import retry
-import os
-from datetime import datetime
+# import streamlit as st
+# import openmeteo_requests
+# import pandas as pd
+# import requests_cache
+# from retry_requests import retry
+# import os
+# from datetime import datetime
 
-st.set_page_config(
-    page_title="Weather Data Downloader",
-    page_icon="🌦️",
-    layout="wide"
-)
+# st.set_page_config(
+#     page_title="Weather Data Downloader",
+#     page_icon="🌦️",
+#     layout="wide"
+# )
 
-st.title("🌦️ Thiruvananthapuram Weather Data")
-st.write("Fetch hourly weather forecast data from Open-Meteo API and download as CSV.")
+# st.title("🌦️ Thiruvananthapuram Weather Data")
+# st.write("Fetch hourly weather forecast data from Open-Meteo API and download as CSV.")
 
-# Create data folder
-data_folder = "data"
-os.makedirs(data_folder, exist_ok=True)
+# # Create data folder
+# data_folder = "data"
+# os.makedirs(data_folder, exist_ok=True)
 
-# Setup Open-Meteo client
-cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
-retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
-openmeteo = openmeteo_requests.Client(session=retry_session)
+# # Setup Open-Meteo client
+# cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+# retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+# openmeteo = openmeteo_requests.Client(session=retry_session)
 
-if st.button("Fetch Weather Data"):
+# if st.button("Fetch Weather Data"):
 
-    with st.spinner("Fetching weather data..."):
+#     with st.spinner("Fetching weather data..."):
 
-        url = "https://api.open-meteo.com/v1/forecast"
+#         url = "https://api.open-meteo.com/v1/forecast"
 
-        params = {
-            "latitude": 8.5241,
-            "longitude": 76.9366,
-            "hourly": [
-                "temperature_2m",
-                "relative_humidity_2m",
-                "dew_point_2m",
-                "rain",
-                "wind_speed_10m",
-                "wind_direction_10m"
-            ],
-        }
+#         params = {
+#             "latitude": 8.5241,
+#             "longitude": 76.9366,
+#             "hourly": [
+#                 "temperature_2m",
+#                 "relative_humidity_2m",
+#                 "dew_point_2m",
+#                 "rain",
+#                 "wind_speed_10m",
+#                 "wind_direction_10m"
+#             ],
+#         }
 
-        responses = openmeteo.weather_api(url, params=params)
-        response = responses[0]
+#         responses = openmeteo.weather_api(url, params=params)
+#         response = responses[0]
 
-        st.success("Data fetched successfully!")
+#         st.success("Data fetched successfully!")
 
-        col1, col2, col3 = st.columns(3)
+#         col1, col2, col3 = st.columns(3)
 
-        with col1:
-            st.metric("Latitude", f"{response.Latitude():.4f}")
+#         with col1:
+#             st.metric("Latitude", f"{response.Latitude():.4f}")
 
-        with col2:
-            st.metric("Longitude", f"{response.Longitude():.4f}")
+#         with col2:
+#             st.metric("Longitude", f"{response.Longitude():.4f}")
 
-        with col3:
-            st.metric("Elevation", f"{response.Elevation():.1f} m")
+#         with col3:
+#             st.metric("Elevation", f"{response.Elevation():.1f} m")
 
-        # Process hourly data
-        hourly = response.Hourly()
+#         # Process hourly data
+#         hourly = response.Hourly()
 
-        hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
-        hourly_relative_humidity_2m = hourly.Variables(1).ValuesAsNumpy()
-        hourly_dew_point_2m = hourly.Variables(2).ValuesAsNumpy()
-        hourly_rain = hourly.Variables(3).ValuesAsNumpy()
-        hourly_wind_speed_10m = hourly.Variables(4).ValuesAsNumpy()
-        hourly_wind_direction_10m = hourly.Variables(5).ValuesAsNumpy()
+#         hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
+#         hourly_relative_humidity_2m = hourly.Variables(1).ValuesAsNumpy()
+#         hourly_dew_point_2m = hourly.Variables(2).ValuesAsNumpy()
+#         hourly_rain = hourly.Variables(3).ValuesAsNumpy()
+#         hourly_wind_speed_10m = hourly.Variables(4).ValuesAsNumpy()
+#         hourly_wind_direction_10m = hourly.Variables(5).ValuesAsNumpy()
 
-        hourly_data = {
-            "date": pd.date_range(
-                start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-                end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-                freq=pd.Timedelta(seconds=hourly.Interval()),
-                inclusive="left"
-            )
-        }
+#         hourly_data = {
+#             "date": pd.date_range(
+#                 start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+#                 end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+#                 freq=pd.Timedelta(seconds=hourly.Interval()),
+#                 inclusive="left"
+#             )
+#         }
 
-        hourly_data["temperature_2m"] = hourly_temperature_2m
-        hourly_data["relative_humidity_2m"] = hourly_relative_humidity_2m
-        hourly_data["dew_point_2m"] = hourly_dew_point_2m
-        hourly_data["rain"] = hourly_rain
-        hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
-        hourly_data["wind_direction_10m"] = hourly_wind_direction_10m
+#         hourly_data["temperature_2m"] = hourly_temperature_2m
+#         hourly_data["relative_humidity_2m"] = hourly_relative_humidity_2m
+#         hourly_data["dew_point_2m"] = hourly_dew_point_2m
+#         hourly_data["rain"] = hourly_rain
+#         hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
+#         hourly_data["wind_direction_10m"] = hourly_wind_direction_10m
 
-        hourly_dataframe = pd.DataFrame(hourly_data)
+#         hourly_dataframe = pd.DataFrame(hourly_data)
 
-        # Save CSV
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_filename = f"weather_thiruvananthapuram_{timestamp}.csv"
-        csv_path = os.path.join(data_folder, csv_filename)
+#         # Save CSV
+#         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#         csv_filename = f"weather_thiruvananthapuram_{timestamp}.csv"
+#         csv_path = os.path.join(data_folder, csv_filename)
 
-        hourly_dataframe.to_csv(csv_path, index=False)
+#         hourly_dataframe.to_csv(csv_path, index=False)
 
-        st.subheader("Weather Data Preview")
-        st.dataframe(hourly_dataframe.head(20), use_container_width=True)
+#         st.subheader("Weather Data Preview")
+#         st.dataframe(hourly_dataframe.head(20), use_container_width=True)
 
-        st.subheader("Temperature Trend")
-        st.line_chart(
-            hourly_dataframe.set_index("date")["temperature_2m"]
-        )
+#         st.subheader("Temperature Trend")
+#         st.line_chart(
+#             hourly_dataframe.set_index("date")["temperature_2m"]
+#         )
 
-        st.info(f"CSV saved locally as: {csv_path}")
-        st.write(f"Total Records: {len(hourly_dataframe)}")
+#         st.info(f"CSV saved locally as: {csv_path}")
+#         st.write(f"Total Records: {len(hourly_dataframe)}")
 
-        # Download button
-        csv_data = hourly_dataframe.to_csv(index=False).encode("utf-8")
+#         # Download button
+#         csv_data = hourly_dataframe.to_csv(index=False).encode("utf-8")
 
-        st.download_button(
-            label="📥 Download CSV",
-            data=csv_data,
-            file_name=csv_filename,
-            mime="text/csv"
-        )
+#         st.download_button(
+#             label="📥 Download CSV",
+#             data=csv_data,
+#             file_name=csv_filename,
+#             mime="text/csv"
+#         )
