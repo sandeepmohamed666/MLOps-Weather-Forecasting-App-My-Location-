@@ -1,0 +1,98 @@
+stages:
+
+
+  ingest:
+    cmd: python src/Data_Ingestion.py
+    deps:
+      - src/Data_Ingestion.py
+
+
+    outs:
+      - data/weather_thiruvananthapuram_20260531_071839.csv:
+          cache: true
+          persist: true   # append-mode → DVC won’t delete it between runs
+
+
+    desc: "Fetch hourly weather data from Open-Meteo and append to raw_data.csv"
+
+
+
+
+  # validate:
+  #   cmd: python src/validate.py
+  #   deps:
+  #     - src/validate.py
+  #     - data/weather_thiruvananthapuram_20260531_071839.csv
+
+
+  #   outs:
+  #     - data/validation_report.json:
+  #         cache: false    # lightweight report, no need to cache
+
+
+  #   desc: "Check raw_data.csv for missing values, schema, and date continuity"
+
+
+
+
+  # featurise:
+  #   cmd: python src/featurise.py
+  #   deps:
+  #     - src/featurise.py
+  #     - data/weather_thiruvananthapuram_20260531_071839.csv
+
+
+  #   outs:
+  #     - data/features.csv
+
+
+  #   desc: "Generate weather features for model training"
+
+
+
+
+  # train:
+  #   cmd: python src/train.py
+  #   deps:
+  #     - src/train.py
+  #     - data/features.csv
+
+
+  #   params:
+  #     - epochs
+  #     - batch_size
+  #     - learning_rate
+
+
+  #   outs:
+  #     - models/weather_model.pkl
+
+
+  #   metrics:
+  #     - reports/metrics.json
+
+
+  #   plots:
+  #     - reports/loss.csv:
+  #         x: epoch
+  #         y: loss
+
+
+  #   desc: "Train weather forecasting model"
+
+
+
+
+  # evaluate:
+  #   cmd: python src/evaluate.py
+  #   deps:
+  #     - src/evaluate.py
+  #     - models/weather_model.pkl
+  #     - data/features.csv
+
+
+  #   metrics:
+  #     - reports/evaluation.json
+
+
+  #   desc: "Evaluate forecasting performance"

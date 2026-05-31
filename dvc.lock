@@ -1,0 +1,14 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python src/Data_Ingestion.py
+    deps:
+    - path: src/Data_Ingestion.py
+      hash: md5
+      md5: c991d52ad72f01fb041430df56d2456e
+      size: 15574
+    outs:
+    - path: data/weather_thiruvananthapuram_20260531_071839.csv
+      hash: md5
+      md5: f9c6682d267000166f79b954a0a16d3b
+      size: 12219
